@@ -28,6 +28,7 @@ services:
     volumes:
       - ./task-scheduler/data:/app/data
       - ./task-scheduler/logs:/app/logs
+    tty: true
     environment:
       REDMINE_URL: http://redmine:3000
       REDMINE_API_KEY: ${REDMINE_API_KEY}
