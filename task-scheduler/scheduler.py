@@ -48,43 +48,63 @@ def check_completed_issues():
         cur = conn.cursor()
         
         # 定期タスクの定義を読み込み
+        logging.info(f"定期タスクの定義を読み込み")
         tasks_df = pd.read_csv('/app/data/periodic_tasks.csv')
         
         # 各定期タスクに対して処理
         for _, task in tasks_df.iterrows():
-            # 完了したチケットを取得
+            # 完了したチケットを取得（作成日が一番新しいものを1件のみ）
             cur.execute("""
                 SELECT i.id, i.subject, i.description, i.project_id, i.tracker_id,
                        i.assigned_to_id, i.priority_id, i.closed_on
                 FROM issues i
                 WHERE i.status_id = 3  -- 完了ステータスのID
-                AND i.closed_on >= NOW() - INTERVAL '1 day'
                 AND i.subject = %s
                 AND i.project_id = %s
+                ORDER BY i.closed_on DESC
+                LIMIT 1
             """, (task['subject'], task['project_id']))
             completed_issues = cur.fetchall()
             
-            # 完了したチケットが存在する場合、次のタスクを作成
-            if len(completed_issues) > 0:
-                # 次回の期日を計算
-                if task['interval_type'] == 'monthly':
-                    next_date = datetime.now() + relativedelta(months=int(task['interval_value']))
-                elif task['interval_type'] == 'weekly':
-                    next_date = datetime.now() + timedelta(weeks=int(task['interval_value']))
+            # 完了したチケットが存在する場合
+            if completed_issues:
+                completed_issue = completed_issues[0]
+                # 新しいチケットが既に作成されているかチェック
+                cur.execute("""
+                    SELECT COUNT(*)
+                    FROM issues i
+                    WHERE i.subject = %s
+                    AND i.project_id = %s
+                    AND i.status_id != 3  -- 完了以外のステータス
+                    AND i.created_on > %s
+                """, (task['subject'], task['project_id'], completed_issue[7]))  # closed_on
+                new_issues_count = cur.fetchone()[0]
                 
-                # 新しいチケットを作成
-                new_issue = redmine.issue.create(
-                    project_id=int(task['project_id']),
-                    subject=task['subject'],
-                    description=task['description'],
-                    tracker_id=int(task['tracker_id']),
-                    assigned_to_id=int(task['assigned_to_id']),
-                    priority_id=int(task['priority_id']),
-                    start_date=datetime.now().date(),
-                    due_date=next_date.date()
-                )
-                
-                logging.info(f"新しい定期タスクを作成しました: {new_issue.id} - {task['subject']}")
+                # 新しいチケットが作成されていない場合のみ作成
+                if new_issues_count == 0:
+                    # 次回の期日を計算
+                    if task['interval_type'] == 'monthly':
+                        next_date = datetime.now() + relativedelta(months=int(task['interval_value']))
+                    elif task['interval_type'] == 'weekly':
+                        next_date = datetime.now() + timedelta(weeks=int(task['interval_value']))
+                    
+                    # 新しいチケットを作成
+                    new_issue = redmine.issue.create(
+                        project_id=int(task['project_id']),
+                        subject=task['subject'],
+                        description=task['description'],
+                        tracker_id=int(task['tracker_id']),
+                        assigned_to_id=int(task['assigned_to_id']),
+                        priority_id=int(task['priority_id']),
+                        start_date=datetime.now().date(),
+                        due_date=next_date.date()
+                    )
+                    
+                    logging.info(f"新しい定期タスクを作成しました: {new_issue.id} - {task['subject']}")
+                else:
+                    logging.info(f"スキップ: 件名 '{task['subject']}' の新しいチケットは既に存在します")
+            else:
+                logging.info(f"スキップ: 件名 '{task['subject']}' の完了したチケットは存在しません")
         
         cur.close()
         conn.close()
