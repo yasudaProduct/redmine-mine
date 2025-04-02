@@ -12,6 +12,7 @@ COPY . .
 
 # 初期タスク作成用スクリプトの実行権限を付与
 RUN chmod +x /app/init-tasks.sh
+RUN chmod +x /app/export.sh
 
 # cronの設定
 RUN echo "0 9 * * * cd /app && python scheduler.py check >> /app/logs/cron.log 2>&1" > /etc/cron.d/redmine-scheduler

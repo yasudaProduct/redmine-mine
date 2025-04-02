@@ -28,9 +28,8 @@ def export_projects():
         # プロジェクト一覧を取得
         projects = redmine.project.all()
         
-        # 出力ファイル名を設定（日時を含める）
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_file = f'/app/data/projects_{timestamp}.csv'
+        # 固定の出力ファイル名を設定
+        output_file = '/app/data/projects.csv'
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -69,9 +68,8 @@ def export_trackers():
         # トラッカー一覧を取得
         trackers = redmine.tracker.all()
         
-        # 出力ファイル名を設定（日時を含める）
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_file = f'/app/data/trackers_{timestamp}.csv'
+        # 固定の出力ファイル名を設定
+        output_file = '/app/data/trackers.csv'
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -104,9 +102,8 @@ def export_users():
         # ユーザー一覧を取得
         users = redmine.user.all()
         
-        # 出力ファイル名を設定（日時を含める）
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_file = f'/app/data/users_{timestamp}.csv'
+        # 固定の出力ファイル名を設定
+        output_file = '/app/data/users.csv'
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -142,9 +139,8 @@ def export_issue_statuses():
         # ステータス一覧を取得
         statuses = redmine.issue_status.all()
         
-        # 出力ファイル名を設定（日時を含める）
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        output_file = f'/app/data/issue_statuses_{timestamp}.csv'
+        # 固定の出力ファイル名を設定
+        output_file = '/app/data/issue_statuses.csv'
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
