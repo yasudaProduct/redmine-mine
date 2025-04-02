@@ -1,4 +1,4 @@
 subject,description,project_id,tracker_id,assigned_to_id,priority_id,interval_type,interval_value,start_date
-月次報告書作成,毎月の業務報告書を作成する,1,1,1,2,monthly,1,2024-04-01
-半期計画書作成,半年ごとの計画書を作成する,1,1,1,2,monthly,6,2024-04-01
-週次MTG議事録作成,週次MTGの議事録を作成する,1,1,1,2,weekly,1,2024-04-01 
+月次報告書作成,毎月の業務報告書を作成する,1,1,1,1,monthly,1,2024-04-01
+半期計画書作成,半年ごとの計画書を作成する,1,1,1,1,monthly,6,2024-04-01
+週次MTG議事録作成,週次MTGの議事録を作成する,1,1,1,1,weekly,1,2024-04-01 

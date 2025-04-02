@@ -1,2 +1,3 @@
 task-scheduler/data/*
 task-scheduler/logs/*
+.env
