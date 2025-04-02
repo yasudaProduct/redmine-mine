@@ -47,26 +47,25 @@ def check_completed_issues():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 完了したチケットを取得
-        cur.execute("""
-            SELECT i.id, i.subject, i.description, i.project_id, i.tracker_id,
-                   i.assigned_to_id, i.priority_id, i.closed_on
-            FROM issues i
-            WHERE i.status_id = 5  -- 完了ステータスのID
-            AND i.closed_on >= NOW() - INTERVAL '1 day'
-        """)
-        completed_issues = cur.fetchall()
-
         # 定期タスクの定義を読み込み
         tasks_df = pd.read_csv('/app/data/periodic_tasks.csv')
         
-        for issue in completed_issues:
-            # 対応する定期タスク定義を検索
-            matching_task = tasks_df[tasks_df['subject'] == issue[1]]
+        # 各定期タスクに対して処理
+        for _, task in tasks_df.iterrows():
+            # 完了したチケットを取得
+            cur.execute("""
+                SELECT i.id, i.subject, i.description, i.project_id, i.tracker_id,
+                       i.assigned_to_id, i.priority_id, i.closed_on
+                FROM issues i
+                WHERE i.status_id = 3  -- 完了ステータスのID
+                AND i.closed_on >= NOW() - INTERVAL '1 day'
+                AND i.subject = %s
+                AND i.project_id = %s
+            """, (task['subject'], task['project_id']))
+            completed_issues = cur.fetchall()
             
-            if not matching_task.empty:
-                task = matching_task.iloc[0]
-                
+            # 完了したチケットが存在する場合、次のタスクを作成
+            if len(completed_issues) > 0:
                 # 次回の期日を計算
                 if task['interval_type'] == 'monthly':
                     next_date = datetime.now() + relativedelta(months=int(task['interval_value']))
