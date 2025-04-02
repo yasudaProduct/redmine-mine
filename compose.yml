@@ -1,8 +1,8 @@
 services:
   redmine:
-    image: redmine:latest
+    image: redmine:6.0.4
     ports:
-      - "3001:3000"
+      - "80:3000"
     environment:
       REDMINE_DB_POSTGRES: db
       REDMINE_DB_DATABASE: redmine

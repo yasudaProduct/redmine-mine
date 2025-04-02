@@ -23,9 +23,5 @@ RUN crontab /etc/cron.d/redmine-scheduler
 # ログディレクトリの作成
 RUN mkdir -p /app/logs && touch /app/logs/cron.log
 
-# 起動スクリプトの作成
-COPY wait-for-redmine.sh /wait-for-redmine.sh
-RUN chmod +x /wait-for-redmine.sh
-
 # 初期タスクの作成とcronの起動
-CMD ["sh", "-c", "/wait-for-redmine.sh && python check-redmine-config.py && python export_projects.py all && /app/init-tasks.sh && cron -f"] 
+CMD ["sh", "-c", "python check-redmine-config.py && python export_projects.py all && /app/init-tasks.sh && cron -f"] 

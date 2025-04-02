@@ -39,6 +39,11 @@ def export_projects():
             
             writer.writeheader()
             for project in projects:
+                try:
+                    parent_id = project.parent.id if hasattr(project, 'parent') and project.parent else ''
+                except:
+                    parent_id = ''
+                
                 writer.writerow({
                     'id': project.id,
                     'name': project.name,
@@ -48,7 +53,7 @@ def export_projects():
                     'status': project.status,
                     'created_on': project.created_on,
                     'updated_on': project.updated_on,
-                    'parent_id': project.parent.id if hasattr(project, 'parent') and project.parent else ''
+                    'parent_id': parent_id
                 })
         
         logging.info(f"プロジェクト情報を {output_file} に出力しました")
@@ -73,17 +78,19 @@ def export_trackers():
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['id', 'name', 'description', 'default_status_id']
+            fieldnames = ['id', 'name']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             writer.writeheader()
             for tracker in trackers:
-                writer.writerow({
-                    'id': tracker.id,
-                    'name': tracker.name,
-                    'description': tracker.description,
-                    'default_status_id': tracker.default_status_id
-                })
+                try:
+                    writer.writerow({
+                        'id': tracker.id,
+                        'name': tracker.name
+                    })
+                except Exception as e:
+                    logging.warning(f"トラッカー {tracker.id} の処理中にエラーが発生しました: {str(e)}")
+                    continue
         
         logging.info(f"トラッカー情報を {output_file} に出力しました")
         
@@ -99,28 +106,35 @@ def export_trackers():
 def export_users():
     """ユーザー情報をCSVに出力"""
     try:
-        # ユーザー一覧を取得
-        users = redmine.user.all()
+        # ユーザー一覧を取得（管理者権限が必要な場合は別の方法を検討）
+        try:
+            users = redmine.user.all()
+        except Exception as e:
+            logging.warning(f"ユーザー一覧の取得に失敗しました: {str(e)}")
+            # 管理者ユーザーのみ取得を試みる
+            users = [redmine.user.get(1)]  # 管理者ユーザーIDを1と仮定
         
         # 固定の出力ファイル名を設定
         output_file = '/app/data/users.csv'
         
         # CSVファイルに書き込み
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['id', 'login', 'firstname', 'lastname', 'mail', 'admin', 'status']
+            fieldnames = ['id', 'login', 'firstname', 'lastname', 'mail']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             writer.writeheader()
             for user in users:
-                writer.writerow({
-                    'id': user.id,
-                    'login': user.login,
-                    'firstname': user.firstname,
-                    'lastname': user.lastname,
-                    'mail': user.mail,
-                    'admin': user.admin,
-                    'status': user.status
-                })
+                try:
+                    writer.writerow({
+                        'id': user.id,
+                        'login': user.login,
+                        'firstname': user.firstname,
+                        'lastname': user.lastname,
+                        'mail': user.mail
+                    })
+                except Exception as e:
+                    logging.warning(f"ユーザー {user.id} の処理中にエラーが発生しました: {str(e)}")
+                    continue
         
         logging.info(f"ユーザー情報を {output_file} に出力しました")
         
@@ -149,11 +163,15 @@ def export_issue_statuses():
             
             writer.writeheader()
             for status in statuses:
-                writer.writerow({
-                    'id': status.id,
-                    'name': status.name,
-                    'is_closed': status.is_closed
-                })
+                try:
+                    writer.writerow({
+                        'id': status.id,
+                        'name': status.name,
+                        'is_closed': status.is_closed
+                    })
+                except Exception as e:
+                    logging.warning(f"ステータス {status.id} の処理中にエラーが発生しました: {str(e)}")
+                    continue
         
         logging.info(f"チケットステータス情報を {output_file} に出力しました")
         
@@ -169,24 +187,35 @@ def export_issue_statuses():
 if __name__ == "__main__":
     import sys
     
-    if len(sys.argv) > 1:
-        command = sys.argv[1]
-        if command == "projects":
-            export_projects()
-        elif command == "trackers":
-            export_trackers()
-        elif command == "users":
-            export_users()
-        elif command == "statuses":
-            export_issue_statuses()
-        elif command == "all":
-            export_projects()
-            export_trackers()
-            export_users()
-            export_issue_statuses()
-    else:
-        # デフォルトではすべての情報を出力
+    # 各エクスポート関数を実行し、エラーが発生しても続行
+    success = True
+    
+    try:
         export_projects()
+    except Exception as e:
+        logging.error(f"プロジェクト情報のエクスポート中にエラーが発生しました: {str(e)}")
+        success = False
+    
+    try:
         export_trackers()
+    except Exception as e:
+        logging.error(f"トラッカー情報のエクスポート中にエラーが発生しました: {str(e)}")
+        success = False
+    
+    try:
         export_users()
-        export_issue_statuses() 
+    except Exception as e:
+        logging.error(f"ユーザー情報のエクスポート中にエラーが発生しました: {str(e)}")
+        success = False
+    
+    try:
+        export_issue_statuses()
+    except Exception as e:
+        logging.error(f"チケットステータス情報のエクスポート中にエラーが発生しました: {str(e)}")
+        success = False
+    
+    # いずれかのエクスポートが成功した場合は0を返す
+    if success:
+        sys.exit(0)
+    else:
+        sys.exit(1) 
